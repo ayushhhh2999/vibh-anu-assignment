@@ -1,0 +1,12 @@
+import { ArrowUpRight, Headphones, Search } from 'lucide-react'
+import { useMemo, useState, type ReactNode } from 'react'
+import type { Lead } from '../../types/domain'
+import { formatDateTime, leadName } from '../../lib/utils'
+import { StatusBadge } from './StatusBadge'
+
+export function LeadTable({ leads, onOpen, showSearch = true, allowContact = true }: { leads: Lead[]; onOpen?: (lead: Lead) => void; showSearch?: boolean; compact?: boolean; allowContact?: boolean }) {
+  const [search, setSearch] = useState('')
+  const visible = useMemo(() => { const q = search.trim().toLowerCase(); return q ? leads.filter((lead) => `${lead.name ?? ''}${allowContact ? ` ${lead.contact_number ?? ''}` : ''}`.toLowerCase().includes(q)) : leads }, [leads, search, allowContact])
+  return <div className="table-card">{showSearch && <div className="table-toolbar"><div className="search-wrap"><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={allowContact ? 'Search by lead or contact' : 'Search by lead name'} aria-label="Search leads" /></div><span className="table-count">{visible.length} visible</span></div>}<div className="table-scroll"><table><thead><tr><th>Lead</th><th>Status</th><th>Created</th><th>Audio</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>{visible.map((lead) => <tr key={String(lead.id)}><td><div className="lead-cell"><span className="lead-avatar">{(lead.name?.[0] ?? 'L').toUpperCase()}</span><div><strong>{leadName(lead)}</strong><small>#{lead.id}{allowContact && lead.contact_number && ` · ${lead.contact_number}`}</small></div></div></td><td><StatusBadge status={lead.status} /></td><td>{formatDateTime(lead.created_at)}</td><td>{lead.audio_available ? <span className="audio-available"><Headphones size={14} /> Ready</span> : <span className="text-muted">Not added</span>}</td><td><button className="icon-button" onClick={() => onOpen?.(lead)} aria-label={`Open ${leadName(lead)}`}><ArrowUpRight size={17} /></button></td></tr>)}</tbody></table></div>{visible.length === 0 && <EmptyState title={search ? 'No matching leads' : 'Queue is clear'} description={search ? 'Try a different name.' : 'New leads will appear here when the backend assigns them to this role.'} />}</div>
+}
+export function EmptyState({ title, description, action }: { title: string; description: string; action?: ReactNode }) { return <div className="empty-state"><div className="empty-mark"><span /></div><h3>{title}</h3><p>{description}</p>{action}</div> }
